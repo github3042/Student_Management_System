@@ -1,6 +1,7 @@
 from tkinter import *      # provide  GUI interface 
 from tkinter import ttk  # provide combo box
 import pymysql # fordatabase
+from tkinter import messagebox  # to show validaation 
 # from tkinter.font import BOLDfont
 class Student:
     def __init__(self, root):
@@ -21,6 +22,9 @@ class Student:
         self.contact_var = StringVar()
         self.dob_var = StringVar()
         self.address_var = StringVar()
+
+        self.search_by = StringVar()
+        self.search_txt = StringVar()
 
         # =============== Manage Frame ===================
         Manage_Frame = Frame(self.root, bd = 4, relief = RIDGE, bg = "#B6B6B4")
@@ -93,18 +97,18 @@ class Student:
         Detail_Frame = Frame(self.root, bd = 4, relief = RIDGE, bg = "#B6B6B4")
         Detail_Frame.place(x = 520, y = 100, width = 820, height = 600)
 
-        lbl_seaarch = Label(Detail_Frame,text = "Search", bg = "#B6B6B4", fg = "black", font = ("times new roman", 20, 'bold'))
-        lbl_seaarch.grid(row = 0, column = 0, pady = 10, padx= 20, sticky = "w")
+        lbl_search = Label(Detail_Frame,text = "Search", bg = "#B6B6B4", fg = "black", font = ("times new roman", 20, 'bold'))
+        lbl_search.grid(row = 0, column = 0, pady = 10, padx= 20, sticky = "w")
 
-        combo_search = ttk.Combobox(Detail_Frame, width  = 10,  font = ("times new roman", 13, 'bold'), state = "readonly")
-        combo_search['values'] = ("RollNo", "Name","Contact")
+        combo_search = ttk.Combobox(Detail_Frame, textvariable= self.search_by, width  = 10,  font = ("times new roman", 13, 'bold'), state = "readonly")
+        combo_search['values'] = ("Roll_No", "Name","Contact")
         combo_search.grid(row = 0, column = 1, pady = 10, padx= 20, sticky = "w")
 
-        txt_search = Entry(Detail_Frame, width = 20, font = ("times new roman", 10, 'bold'), bd = 5, relief = GROOVE )
+        txt_search = Entry(Detail_Frame,textvariable=self.search_txt, width = 20, font = ("times new roman", 10, 'bold'), bd = 5, relief = GROOVE )
         txt_search.grid(row = 0, column = 2, pady = 10, padx= 20, sticky = "w")
 
-        searchbtn = Button(Detail_Frame, text="Search",width=10,  bg="#033E3E",fg="white",cursor="hand2",font=("",10,'bold')).grid(row=0, column=3,padx=10,pady=10)
-        showvalbtn = Button(Detail_Frame, text="ShowAll",width=10,  bg="#033E3E",fg="white",cursor="hand2",font=("",10,'bold')).grid(row=0, column=4,padx=10,pady=10)
+        searchbtn = Button(Detail_Frame, command=self.search_data, text="Search",width=10,  bg="#033E3E",fg="white",cursor="hand2",font=("",10,'bold')).grid(row=0, column=3,padx=10,pady=10)
+        showvalbtn = Button(Detail_Frame, command=self.fetch_data, text="ShowAll",width=10,  bg="#033E3E",fg="white",cursor="hand2",font=("",10,'bold')).grid(row=0, column=4,padx=10,pady=10)
 
          # =============== Table Frame ===================
 
@@ -147,21 +151,28 @@ class Student:
         self.fetch_data()
     
     def add_student(self):
-        con=pymysql.connect(host="localhost", user="root", password="", database="sms") # database connection
-        cur = con.cursor() # to exicute query
-        cur.execute("insert into students values(%s,%s,%s,%s,%s,%s,%s)",(self.Roll_No_var.get(),
-                                                                            self.name_var.get(),
-                                                                            self.email_var.get(),
-                                                                            self.gender_var.get(),
-                                                                            self.contact_var.get(),
-                                                                            self.dob_var.get(),
-                                                                            self.txt_address.get('1.0',END)
-                                                                            ))                   
-        con.commit()       
-        self.fetch_data()
-        self.clear()                                               
-        con.close()
+        if(self.Roll_No_var.get()=="" or self.name_var.get()=="" or self.name_var.get()=="" or self.email_var.get() ==""
+         or self.gender_var.get()=="" or self.contact_var.get()=="" or self.dob_var.get()=="" ):
+            messagebox.showerror("Error","All feild are required! ")
+        # elif(self.Roll_No_var.get()== "neme=%s"):
+        #     messagebox.showerror("Error","The rollno is already exits ")
+        else:   
+            con=pymysql.connect(host="localhost", user="root", password="", database="sms") # database connection
+            cur = con.cursor() # to exicute query
+            cur.execute("insert into students values(%s,%s,%s,%s,%s,%s,%s)",(self.Roll_No_var.get(),
+                                                                                self.name_var.get(),
+                                                                                self.email_var.get(),
+                                                                                self.gender_var.get(),
+                                                                                self.contact_var.get(),
+                                                                                self.dob_var.get(),
+                                                                                self.txt_address.get('1.0',END)
+                                                                                ))                   
+            con.commit()       
+            self.fetch_data()
+            self.clear()                                               
+            con.close()
 
+            messagebox.showinfo("Message","Record has been inserted.")
         # To fetch data from database 
     def fetch_data(self):
         con=pymysql.connect(host="localhost", user="root", password="", database="sms") # database connection
@@ -212,6 +223,7 @@ class Student:
                                                                                                                 self.txt_address.get('1.0',END),
                                                                                                                 self.Roll_No_var.get()
                                                                                                                 ))   
+        messagebox.showinfo("Message"," Record updated successfully!")                                                                                                        
         con.commit()      
         self.fetch_data()
         self.clear()
@@ -223,10 +235,25 @@ class Student:
         cur = con.cursor()
         cur.execute("delete from students where roll_no = %s", self.Roll_No_var.get())
 
+        messagebox.showinfo("Message"," Record deleted successfully!")
+
         con.commit()      
         con.close()
         self.fetch_data()
         self.clear()       
+
+ # Searcch data 
+    def search_data(self):
+        con=pymysql.connect(host="localhost", user="root", password="", database="sms") # database connection
+        cur = con.cursor()
+        cur.execute("select * from students where "+ str(self.search_by.get())+" Like '%"+str(self.search_txt.get())+"%'")
+        rows = cur.fetchall()
+        if len(rows)!=0:
+            self.Student_table.delete(*self.Student_table.get_children())
+            for row in rows:
+                self.Student_table.insert('',END,value = row)
+            con.commit()
+        con.close()
 
 
 root = Tk()
